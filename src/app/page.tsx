@@ -1,17 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Editor } from "@monaco-editor/react";
 import * as diff from "diff";
+import * as monaco from "monaco-editor";
 
 export default function Home() {
   const [leftText, setLeftText] = useState("");
   const [rightText, setRightText] = useState("");
   const [diffResult, setDiffResult] = useState<diff.Change[]>([]);
 
+  const leftEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(
+    null
+  );
+  const rightEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(
+    null
+  );
+
+  const handleEditorDidMount = (
+    editor: monaco.editor.IStandaloneCodeEditor,
+    isLeft: boolean
+  ) => {
+    if (isLeft) {
+      leftEditorRef.current = editor;
+    } else {
+      rightEditorRef.current = editor;
+    }
+  };
+
+  const clearDecorations = () => {
+    if (leftEditorRef.current) {
+      leftEditorRef.current.deltaDecorations([], []);
+    }
+    if (rightEditorRef.current) {
+      rightEditorRef.current.deltaDecorations([], []);
+    }
+  };
+
   const handleCompare = () => {
+    clearDecorations();
     const differences = diff.diffLines(leftText, rightText);
     setDiffResult(differences);
+
+    let leftLineNumber = 1;
+    let rightLineNumber = 1;
+
+    differences.forEach((part) => {
+      const lines = part.value.split("\n").length - 1;
+
+      if (part.removed && leftEditorRef.current) {
+        leftEditorRef.current.deltaDecorations(
+          [],
+          [
+            {
+              range: new monaco.Range(
+                leftLineNumber,
+                1,
+                leftLineNumber + lines,
+                1
+              ),
+              options: {
+                isWholeLine: true,
+                className: "bg-red-200 bg-opacity-40",
+              },
+            },
+          ]
+        );
+        leftLineNumber += lines;
+      } else if (part.added && rightEditorRef.current) {
+        rightEditorRef.current.deltaDecorations(
+          [],
+          [
+            {
+              range: new monaco.Range(
+                rightLineNumber,
+                1,
+                rightLineNumber + lines,
+                1
+              ),
+              options: {
+                isWholeLine: true,
+                className: "bg-green-200 bg-opacity-40",
+              },
+            },
+          ]
+        );
+        rightLineNumber += lines;
+      } else {
+        leftLineNumber += lines;
+        rightLineNumber += lines;
+      }
+    });
   };
 
   return (
@@ -28,6 +107,7 @@ export default function Home() {
               value={leftText}
               onChange={(value) => setLeftText(value || "")}
               theme="vs-dark"
+              onMount={(editor) => handleEditorDidMount(editor, true)}
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
@@ -46,6 +126,7 @@ export default function Home() {
               value={rightText}
               onChange={(value) => setRightText(value || "")}
               theme="vs-dark"
+              onMount={(editor) => handleEditorDidMount(editor, false)}
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
