@@ -31,6 +31,7 @@ export default function Home() {
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
+                wordWrap: "on",
               }}
             />
           </div>
@@ -48,6 +49,7 @@ export default function Home() {
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
+                wordWrap: "on",
               }}
             />
           </div>
