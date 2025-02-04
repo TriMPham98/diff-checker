@@ -9,6 +9,8 @@ export default function Home() {
   const [leftText, setLeftText] = useState("");
   const [rightText, setRightText] = useState("");
   const [diffResult, setDiffResult] = useState<diff.Change[]>([]);
+  const [leftDecorations, setLeftDecorations] = useState<string[]>([]);
+  const [rightDecorations, setRightDecorations] = useState<string[]>([]);
 
   const leftEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(
     null
@@ -30,10 +32,12 @@ export default function Home() {
 
   const clearDecorations = () => {
     if (leftEditorRef.current) {
-      leftEditorRef.current.deltaDecorations([], []);
+      leftEditorRef.current.deltaDecorations(leftDecorations, []);
+      setLeftDecorations([]);
     }
     if (rightEditorRef.current) {
-      rightEditorRef.current.deltaDecorations([], []);
+      rightEditorRef.current.deltaDecorations(rightDecorations, []);
+      setRightDecorations([]);
     }
   };
 
@@ -44,12 +48,14 @@ export default function Home() {
 
     let leftLineNumber = 1;
     let rightLineNumber = 1;
+    let newLeftDecorations: string[] = [];
+    let newRightDecorations: string[] = [];
 
     differences.forEach((part) => {
       const lines = part.value.split("\n").length - 1;
 
       if (part.removed && leftEditorRef.current) {
-        leftEditorRef.current.deltaDecorations(
+        const decorations = leftEditorRef.current.deltaDecorations(
           [],
           [
             {
@@ -66,9 +72,10 @@ export default function Home() {
             },
           ]
         );
+        newLeftDecorations.push(...decorations);
         leftLineNumber += lines;
       } else if (part.added && rightEditorRef.current) {
-        rightEditorRef.current.deltaDecorations(
+        const decorations = rightEditorRef.current.deltaDecorations(
           [],
           [
             {
@@ -85,12 +92,16 @@ export default function Home() {
             },
           ]
         );
+        newRightDecorations.push(...decorations);
         rightLineNumber += lines;
       } else {
         leftLineNumber += lines;
         rightLineNumber += lines;
       }
     });
+
+    setLeftDecorations(newLeftDecorations);
+    setRightDecorations(newRightDecorations);
   };
 
   return (
