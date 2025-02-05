@@ -5,10 +5,15 @@ import { Editor } from "@monaco-editor/react";
 import * as diff from "diff";
 import * as monaco from "monaco-editor";
 
+interface EnhancedDiffResult extends diff.Change {
+  leftStart: number | null;
+  rightStart: number | null;
+}
+
 export default function Home() {
   const [leftText, setLeftText] = useState("");
   const [rightText, setRightText] = useState("");
-  const [diffResult, setDiffResult] = useState<diff.Change[]>([]);
+  const [diffResult, setDiffResult] = useState<EnhancedDiffResult[]>([]);
   const [leftDecorations, setLeftDecorations] = useState<string[]>([]);
   const [rightDecorations, setRightDecorations] = useState<string[]>([]);
 
@@ -44,12 +49,21 @@ export default function Home() {
   const handleCompare = () => {
     clearDecorations();
     const differences = diff.diffLines(leftText, rightText);
-    setDiffResult(differences);
 
     let leftLineNumber = 1;
     let rightLineNumber = 1;
     let newLeftDecorations: string[] = [];
     let newRightDecorations: string[] = [];
+
+    // Add line numbers to each diff part
+    const differencesWithLines: EnhancedDiffResult[] = differences.map(
+      (part) => ({
+        ...part,
+        leftStart: part.removed || !part.added ? leftLineNumber : null,
+        rightStart: part.added || !part.removed ? rightLineNumber : null,
+        value: part.value,
+      })
+    );
 
     differences.forEach((part) => {
       const lines = part.value.split("\n").length - 1;
@@ -100,6 +114,7 @@ export default function Home() {
       }
     });
 
+    setDiffResult(differencesWithLines);
     setLeftDecorations(newLeftDecorations);
     setRightDecorations(newRightDecorations);
   };
@@ -170,9 +185,18 @@ export default function Home() {
                     ? "bg-red-100 text-red-800"
                     : "bg-gray-100"
                 }`}>
-                <pre className="whitespace-pre-wrap font-mono text-sm">
-                  {part.value}
-                </pre>
+                <div className="flex items-start">
+                  <div className="w-16 flex-shrink-0 font-mono text-sm text-gray-500">
+                    {part.leftStart !== null && `L${part.leftStart}`}
+                    {part.rightStart !== null &&
+                      part.leftStart !== null &&
+                      " | "}
+                    {part.rightStart !== null && `R${part.rightStart}`}
+                  </div>
+                  <pre className="whitespace-pre-wrap font-mono text-sm flex-1">
+                    {part.value}
+                  </pre>
+                </div>
               </div>
             ))}
           </div>
