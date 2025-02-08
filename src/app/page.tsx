@@ -183,7 +183,7 @@ export default function Home() {
                     ? "bg-green-100 text-green-800"
                     : part.removed
                     ? "bg-red-100 text-red-800"
-                    : "bg-gray-100"
+                    : "bg-gray-100 text-gray-600"
                 }`}>
                 <div className="flex items-start">
                   <div className="w-16 flex-shrink-0 font-mono text-sm text-gray-500">
